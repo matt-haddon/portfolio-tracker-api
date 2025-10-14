@@ -8,7 +8,6 @@
 ![Build](https://img.shields.io/badge/Status-Active-success)
 
 A fully containerised **Django REST Framework** backend for managing investment portfolios and holdings.  
-Built as part of a backend/infrastructure learning plan — designed for real-world development, testing, and deployment.
 
 ---
 
