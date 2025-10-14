@@ -1,0 +1,20 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Build tools for native wheels + postgres client headers
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY Pipfile Pipfile.lock ./
+RUN pip install --no-cache-dir pipenv \
+  && pipenv install --system --deploy
+
+# Source will be bind-mounted by compose (COPY is optional)
+COPY . .
+
+ENV DJANGO_ENV=local
+EXPOSE 8000
+
+# Dev server (auto-reload)
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

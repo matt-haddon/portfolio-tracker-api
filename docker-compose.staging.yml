@@ -1,0 +1,34 @@
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.staging
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-staging.localhost}
+      STAGING_BROWSABLE_API: "true"
+      STAGING_DOCS_PUBLIC: "true"
+      DATABASE_URL: ${DATABASE_URL:-}
+    ports:
+      - "8001:8000"   # keep prod-ish on 8000; staging on 8001 locally
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    env_file: .env
+    volumes:
+      - pg_data_staging:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # optional: map a different host port for staging DB
+    # ports:
+    #   - "5433:5432"
+
+volumes:
+  pg_data_staging:

@@ -1,0 +1,35 @@
+
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev          # dev image (runserver, dev deps)
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.local
+    env_file: .env                        # pull POSTGRES_* etc for Django
+    volumes:
+      - .:/app                            # mount code for hot reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    # inherits image/env/volume from base compose if you use a base file
+    image: postgres:15
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data  # persist DB locally
+    ports:
+      - "5432:5432"                       # expose for psql/TablePlus/DBeaver
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pg_data: {}

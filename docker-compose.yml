@@ -1,0 +1,32 @@
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.production
+      # set ALLOWED_HOSTS via env/CI (comma-separated)
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost}
+      # prefer DATABASE_URL in real prod; .env fallback below for local prod-ish
+      DATABASE_URL: ${DATABASE_URL:-}
+    # No source-code volume in production-like runs
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pg_data:
