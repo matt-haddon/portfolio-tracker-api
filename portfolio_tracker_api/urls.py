@@ -16,18 +16,22 @@ Including another URLconf
 """
 
 from django.conf import settings
-from django.urls import path, include
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularSwaggerView,
-    SpectacularRedocView,
-)
-from django.conf import settings
+from django.urls import path
 
-urlpatterns = []
+from .views import health
+
+urlpatterns = [
+    path("health/", health),
+]
 
 # Serve docs only when DEBUG=True (local/staging)
 if settings.DEBUG:
+    from drf_spectacular.views import (
+        SpectacularAPIView,
+        SpectacularRedocView,
+        SpectacularSwaggerView,
+    )
+
     urlpatterns += [
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         path(
@@ -35,7 +39,5 @@ if settings.DEBUG:
             SpectacularSwaggerView.as_view(url_name="schema"),
             name="swagger-ui",
         ),
-        path(
-            "api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"
-        ),
+        path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     ]

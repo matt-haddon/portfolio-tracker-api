@@ -11,15 +11,17 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
+
 def get_settings_module():
     env = os.getenv("DJANGO_ENV", "local").lower()
     if env == "production":
         return "portfolio_tracker_api.settings.production"
     elif env == "staging":
-        return "portfolio_tracker_api.settings.staging" 
+        return "portfolio_tracker_api.settings.staging"
     else:
         return "portfolio_tracker_api.settings.local"
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', get_settings_module())
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", get_settings_module())
 
 application = get_wsgi_application()

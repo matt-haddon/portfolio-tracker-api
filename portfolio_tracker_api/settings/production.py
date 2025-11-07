@@ -1,15 +1,12 @@
-from .base import *
 import os
+
+from .base import *
 
 DEBUG = False
 
-ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h] or [
-    "yourdomain.com"
-]
+ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h] or ["yourdomain.com"]
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{h}"
-    for h in ALLOWED_HOSTS
-    if h and not h.startswith(("localhost", "127.0.0.1"))
+    f"https://{h}" for h in ALLOWED_HOSTS if h and not h.startswith(("localhost", "127.0.0.1"))
 ]
 
 # Optional: serve admin static via Whitenoise
@@ -25,9 +22,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 # JSON-only API
-REST_FRAMEWORK = {
-    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",)
-}
+REST_FRAMEWORK = {"DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",)}
 
 # Logging
 LOGGING = {

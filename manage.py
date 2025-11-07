@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+
 import os
 import sys
+
 
 def get_settings_module():
     env = os.getenv("DJANGO_ENV", "local").lower()
     if env == "production":
         return "portfolio_tracker_api.settings.production"
     elif env == "staging":
-        return "portfolio_tracker_api.settings.staging" 
+        return "portfolio_tracker_api.settings.staging"
     else:
         return "portfolio_tracker_api.settings.local"
 
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', get_settings_module())
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", get_settings_module())
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -27,5 +29,5 @@ def main():
     execute_from_command_line(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
