@@ -2,20 +2,45 @@
 # DJANGO / DOCKER MAKEFILE
 # --------------------------------------------
 # Usage:
-#   make dev       → run local dev stack (hot reload)
-#   make staging   → run staging stack (Gunicorn + docs)
-#   make prod      → run production-like stack (Gunicorn)
-#   make down      → stop all containers
-#   make clean     → stop + remove volumes (wipe DB)
-#   make logs      → follow logs
-#   make shell     → open shell in web container
-#   make migrate   → run Django migrations
-#   make superuser → create Django superuser
-#   make build     → build containers only
-#   make help      → show this list
+#   make dev            → run local dev stack (hot reload)
+#   make staging        → run staging stack (Gunicorn + docs)
+#   make prod           → run production-like stack (Gunicorn)
+#   make down           → stop all containers
+#   make clean          → stop + remove volumes (wipe DB)
+#   make logs           → follow logs
+#   make shell          → open shell in web container
+#   make migrate        → run Django migrations
+#   make makemigrations → create migrations from model changes
+#   make superuser      → create Django superuser
+#   make build          → build containers only
+#   make test           → run tests inside the web container
+#   make test-local     → run tests via Pipenv on host
+#   make lint           → ruff+isort+black checks (no changes)
+#   make format         → isort+black (writes changes)
+#   make precommit      → run pre-commit on all files
+#   make help           → show this list
 # --------------------------------------------
 
-.PHONY: help dev staging prod down clean logs shell migrate superuser build
+# ---- Compose runner (switch to "docker-compose" if you use legacy) ----
+DC ?= docker compose
+
+# --------------------------------------------
+# COMPOSE FILE PATHS
+# --------------------------------------------
+COMPOSE_DEV = -f docker-compose.yml -f docker-compose.dev.yml
+COMPOSE_STAGING = -f docker-compose.yml -f docker-compose.staging.yml
+COMPOSE_PROD = -f docker-compose.yml
+
+# --------------------------------------------
+# PHONY TARGETS
+# --------------------------------------------
+.PHONY: help dev staging prod down clean logs shell migrate makemigrations superuser build \
+        test test-local lint format precommit
+
+
+# --------------------------------------------
+# TARGETS
+# --------------------------------------------
 
 help:
 	@echo ""
@@ -30,53 +55,73 @@ help:
 	@echo "  logs       - Follow logs for all services"
 	@echo "  shell      - Open shell in web container"
 	@echo "  migrate    - Run Django migrations"
-	@echo "  superuser  - Create Django superuser"
-	@echo "  build      - Build containers only"
+	@echo "  makemigrations - Create migrations from model changes"
+	@echo "  superuser      - Create Django superuser"
+	@echo "  build          - Build containers only"
+	@echo "  test           - Run tests inside the web container"
+	@echo "  test-local     - Run tests via Pipenv on host"
+	@echo "  lint           - Ruff+isort+Black checks"
+	@echo "  format         - Apply isort+Black formatting"
+	@echo "  precommit      - Run pre-commit on all files"
 	@echo ""
 
-# --------------------------------------------
-# COMPOSE FILE PATHS
-# --------------------------------------------
-COMPOSE_DEV = -f docker-compose.yml -f docker-compose.dev.yml
-COMPOSE_STAGING = -f docker-compose.yml -f docker-compose.staging.yml
-COMPOSE_PROD = -f docker-compose.yml
-
-# --------------------------------------------
-# TARGETS
-# --------------------------------------------
-
 dev:
-	docker-compose $(COMPOSE_DEV) up -d --build
-	@echo "🚀 Dev stack running at http://localhost:8000"
+	$(DC) $(COMPOSE_DEV) up -d --build
+	@echo "Dev stack running at http://localhost:8000"
 
 staging:
-	docker-compose $(COMPOSE_STAGING) up -d --build
-	@echo "🚀 Staging stack running at http://localhost:8001 (Swagger docs enabled)"
+	$(DC) $(COMPOSE_STAGING) up -d --build
+	@echo "Staging stack running at http://localhost:8001"
 
 prod:
-	docker-compose $(COMPOSE_PROD) up -d --build
-	@echo "🚀 Production-like stack running at http://localhost:8000"
+	$(DC) $(COMPOSE_PROD) up -d --build
+	@echo "Production-like stack running at http://localhost:8000"
 
 down:
-	docker-compose down
-	@echo "🛑 Containers stopped (volumes preserved)"
+	$(DC) down
+	@echo "Containers stopped (volumes preserved)"
 
 clean:
-	docker-compose down -v
-	@echo "🧹 Containers and volumes removed (DB wiped)"
+	$(DC) down -v
+	@echo "Containers and volumes removed (DB wiped)"
 
 logs:
-	docker-compose logs -f
+	$(DC) logs -f
 
 shell:
-	docker-compose exec web /bin/bash
+	$(DC) exec web /bin/bash
 
 migrate:
-	docker-compose exec web python manage.py migrate
+	$(DC) exec web python manage.py migrate
+
+makemigrations:
+	$(DC) exec web python manage.py makemigrations
 
 superuser:
-	docker-compose exec web python manage.py createsuperuser
+	$(DC) exec web python manage.py createsuperuser
 
 build:
-	docker-compose build
-	@echo "🏗️ Containers rebuilt successfully"
+	$(DC) build
+	@echo "Containers rebuilt successfully"
+
+# ---- Testing ----
+# Inside the container (parity with CI)
+test:
+	$(DC) exec web pytest --maxfail=1 --disable-warnings -q
+
+# On host via Pipenv (fast local loop)
+test-local:
+	pipenv run pytest --maxfail=1 --disable-warnings -q --cov --cov-report=term-missing
+
+# ---- Linting / Formatting ----
+lint:
+	pipenv run ruff check .
+	pipenv run isort --check-only .
+	pipenv run black --check .
+
+format:
+	pipenv run isort .
+	pipenv run black .
+
+precommit:
+	pipenv run pre-commit run --all-files
