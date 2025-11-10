@@ -4,6 +4,9 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 
+INSTALLED_APPS += ["django.contrib.staticfiles", "drf_spectacular_sidecar"]
+STATIC_URL = "static/"
+
 # Enable DRF's browsable API in development
 REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = (
     "rest_framework.renderers.JSONRenderer",

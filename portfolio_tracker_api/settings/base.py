@@ -1,5 +1,7 @@
 import os
+from datetime import timedelta
 from pathlib import Path
+from typing import Any
 
 import dj_database_url
 from dotenv import load_dotenv
@@ -16,6 +18,8 @@ DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h] or [
     "localhost",
     "127.0.0.1",
+    "0.0.0.0",  # Docker
+    "web",  # docker-compose service name
 ]
 
 # ------------------------------------------------------------
@@ -28,13 +32,15 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
-    "django.contrib.messages",
+    "django_filters",
     # REST Framework
     "rest_framework",
     "corsheaders",
     # Swagger
     "drf_spectacular",
-    "drf_spectacular_sidecar",
+    # Local apps
+    "core",
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -42,16 +48,14 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 
 CORS_ALLOWED_ORIGINS = [
     "https://app.yoursite.com",
-    # "http://localhost:3000",  # during local dev
+    "http://localhost:3000",  # during local dev
 ]
 
 ROOT_URLCONF = "portfolio_tracker_api.urls"
@@ -69,6 +73,8 @@ SPECTACULAR_SETTINGS = {
 # ------------------------------------------------------------
 # DATABASE CONFIGURATION
 # ------------------------------------------------------------
+
+DATABASES: dict[str, Any]
 
 # Database: prefer DATABASE_URL, else fall back to discrete vars
 _db_url = os.getenv("DATABASE_URL")
@@ -95,6 +101,10 @@ else:
         }
     }
 
+# Safe for all environments
+DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+
 # ------------------------------------------------
 # AUTH / USERS
 # ------------------------------------------------
@@ -115,12 +125,31 @@ USE_TZ = True
 # ------------------------------------------------------------
 
 REST_FRAMEWORK = {
+    # Renderers
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
-    "DEFAULT_PERMISSION_CLASSES": [],
+    # Authentication / Permissions
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    # Filtering / Ordering (for portfolio endpoints)
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+    # Pagination
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 25,
+    # Schema
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+if DEBUG:
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] += ("rest_framework.renderers.BrowsableAPIRenderer",)
 
 
 # ------------------------------------------------------------
@@ -144,8 +173,22 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# ------------------------------------------------
+# JWT CONFIG
+# ------------------------------------------------
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": True,
+}
+
 # ------------------------------------------------------------
 # MISC SETTINGS
 # ------------------------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+APPEND_SLASH = False  # friendlier for pure APIs; keeps /api/v1/users/me (no trailing slash)
