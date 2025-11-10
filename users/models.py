@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import EmailValidator
 from django.db import IntegrityError, models, transaction
@@ -12,7 +14,7 @@ class UserManager(BaseUserManager):
     use_in_migrations = True
 
     @transaction.atomic
-    def create_user(self, email: str, password: str | None = None, **extra):
+    def create_user(self, email: str, password: str | None = None, **extra: Any) -> CustomUser:
         if not email:
             raise ValueError("Email is required")
 
@@ -51,8 +53,8 @@ class UserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    # NOTE: unique=False here because we enforce *case-insensitive* uniqueness via a constraint below.
-    email = models.EmailField(validators=[EmailValidator()], unique=True)
+
+    email = models.EmailField(validators=[EmailValidator()], unique=True, db_index=True)
 
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
@@ -65,7 +67,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: list[str] = []  # createsuperuser will only prompt for email + password
 
-    objects = UserManager()
+    objects: UserManager = UserManager()
 
     class Meta:
         # Enforce **case-insensitive** uniqueness at the database level.

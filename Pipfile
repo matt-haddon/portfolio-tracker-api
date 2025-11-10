@@ -26,6 +26,8 @@ pre-commit = "*"
 pytest = "*"
 pytest-django = "*"
 pytest-cov = "*"
+django-stubs = "*"
+djangorestframework-stubs = "*"
 
 [requires]
 python_version = "3.13"
