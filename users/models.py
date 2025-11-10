@@ -52,7 +52,7 @@ class UserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     # NOTE: unique=False here because we enforce *case-insensitive* uniqueness via a constraint below.
-    email = models.EmailField(validators=[EmailValidator()], unique=False)
+    email = models.EmailField(validators=[EmailValidator()], unique=True)
 
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
