@@ -146,6 +146,8 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 25,
     # Schema
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Exceptions handler
+    "EXCEPTION_HANDLER": "core.exceptions.exception_handler",
 }
 
 if DEBUG:
