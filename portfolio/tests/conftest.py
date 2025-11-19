@@ -5,6 +5,8 @@ from rest_framework.test import APIClient
 pytestmark = pytest.mark.django_db
 User = get_user_model()
 
+TOKEN_URL = "/api/v1/auth/token/"
+
 
 @pytest.fixture
 def user():
@@ -17,38 +19,37 @@ def other_user():
 
 
 @pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def auth_client(api_client, user):
+def auth_client(user):
     """
     API client authenticated as `user` via SimpleJWT.
-    Adjust /api/v1/token/ if your token endpoint differs.
+    Adjust TOKEN_URL if your token endpoint differs.
     """
-    res = api_client.post(
-        "/api/v1/token/",
+
+    client = APIClient()
+    res = client.post(
+        TOKEN_URL,
         {"email": user.email, "password": "pass1234"},
         format="json",
     )
     assert res.status_code == 200, res.content
     token = res.json()["access"]
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    return client
 
 
 @pytest.fixture
-def other_auth_client(api_client, other_user):
+def other_auth_client(other_user):
     """
     API client authenticated as `other_user` via SimpleJWT.
     """
-    res = api_client.post(
-        "/api/v1/token/",
+
+    client = APIClient()
+    res = client.post(
+        TOKEN_URL,
         {"email": other_user.email, "password": "pass1234"},
         format="json",
     )
     assert res.status_code == 200, res.content
     token = res.json()["access"]
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    return client

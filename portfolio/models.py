@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
@@ -82,4 +84,4 @@ class Holding(TimeStampedModel):
         """
         if self.quantity is None or self.avg_price is None:
             return None
-        return self.quantity * self.avg_price
+        return Decimal(self.quantity) * Decimal(self.avg_price)

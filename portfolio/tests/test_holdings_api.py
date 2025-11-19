@@ -109,7 +109,7 @@ def test_case_insensitive_symbol_uniqueness(auth_client, portfolio_u1):
         },
         format="json",
     )
-    assert r2.status_code == status.HTTP_400_BAD_REQUEST
+    assert r2.status_code == status.HTTP_409_CONFLICT
 
 
 def test_validation_non_negative(auth_client, portfolio_u1):
