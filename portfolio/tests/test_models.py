@@ -1,54 +1,33 @@
 import pytest
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
+
+from portfolio.models import Holding, Portfolio
 
 pytestmark = pytest.mark.django_db
-User = get_user_model()
 
 
-@pytest.fixture
-def user():
-    return User.objects.create_user(email="u1@example.com", password="pass1234")
+def test_portfolio_str(user):
+    p = Portfolio.objects.create(owner=user, name="ISA", currency="GBP")
+    assert str(p) == "ISA (GBP)"
 
 
-@pytest.fixture
-def other_user():
-    return User.objects.create_user(email="u2@example.com", password="pass1234")
-
-
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def auth_client(api_client, user):
-    """
-    API client authenticated as `user` via SimpleJWT.
-    Adjust /api/v1/token/ if your token endpoint differs.
-    """
-    res = api_client.post(
-        "/api/v1/token/",
-        {"email": user.email, "password": "pass1234"},
-        format="json",
+def test_holding_symbol_normalized(user):
+    p = Portfolio.objects.create(owner=user, name="Core", currency="GBP")
+    h = Holding.objects.create(
+        portfolio=p,
+        symbol="vusa.l",
+        quantity="1",
+        avg_price="10",
     )
-    assert res.status_code == 200, res.content
-    token = res.json()["access"]
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
+    assert h.symbol == "VUSA.L"
+    assert str(h).startswith("VUSA.L@")
 
 
-@pytest.fixture
-def other_auth_client(api_client, other_user):
-    """
-    API client authenticated as `other_user` via SimpleJWT.
-    """
-    res = api_client.post(
-        "/api/v1/token/",
-        {"email": other_user.email, "password": "pass1234"},
-        format="json",
+def test_cost_basis_property(user):
+    p = Portfolio.objects.create(owner=user, name="Core", currency="GBP")
+    h = Holding.objects.create(
+        portfolio=p,
+        symbol="AAPL",
+        quantity="2",
+        avg_price="150",
     )
-    assert res.status_code == 200, res.content
-    token = res.json()["access"]
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
+    assert h.cost_basis == 300
