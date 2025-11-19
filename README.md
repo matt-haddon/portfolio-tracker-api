@@ -11,6 +11,32 @@ A fully containerised **Django REST Framework** backend for managing investment 
 
 ---
 
+## ⚡ Quickstart TL;DR
+
+```bash
+# 1. Clone the repo
+git clone <your-repo-url>
+cd portfolio-tracker-api
+
+# 2. Copy env template (if exists) or create .env
+cp .env.example .env  # or create .env manually
+
+# 3. Start the local stack
+make dev
+
+# 4. Run migrations and tests
+make migrate
+make test
+
+# 5. Obtain a JWT
+curl -X POST http://localhost:8000/api/v1/auth/token/   -H "Content-Type: application/json"   -d '{"email": "you@example.com", "password": "yourpassword"}'
+
+# 6. Open API docs
+open http://localhost:8000/api/docs/
+```
+
+---
+
 ## 🚀 Features
 
 - Django REST Framework with OpenAPI (Swagger + ReDoc)
@@ -37,10 +63,8 @@ A fully containerised **Django REST Framework** backend for managing investment 
 ## ⚙️ Local Development
 
 ```bash
-# Build and start containers
 make dev
-
-# or manually:
+# or:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
@@ -48,20 +72,20 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 # 📚 API Overview
 
-This project exposes a **versioned REST API** under:
+Base URL:
 
 ```
 /api/v1/
 ```
 
-Authentication is via **JWT (JSON Web Tokens)**, using SimpleJWT.
+Authentication uses **JWT** via SimpleJWT:
 
 ```
-POST /api/v1/auth/token/          # obtain access + refresh tokens
-POST /api/v1/auth/token/refresh/  # refresh access token
+POST /api/v1/auth/token/
+POST /api/v1/auth/token/refresh/
 ```
 
-All protected routes require:
+Include JWT in all protected requests:
 
 ```
 Authorization: Bearer <access_token>
@@ -71,34 +95,25 @@ Authorization: Bearer <access_token>
 
 # 🗂 Portfolios API
 
-Portfolios represent independently named collections of financial holdings.  
-Each portfolio belongs exclusively to a single authenticated user.
+Portfolios represent collections of investments owned by a single user.
 
 ### 🔒 Multi-Tenant Isolation
 
-Every portfolio is automatically scoped to the authenticated user:
-
-- You **can only list your own portfolios**
-- You **cannot read/update/delete** portfolios belonging to another user  
-- Cross-tenant access returns **404 Not Found** for safety
-
----
+- You **only see your own portfolios**
+- You **cannot access another user's data**
+- Cross-tenant operations return **404 Not Found**
 
 ## 📌 Endpoints
 
 | Method | Endpoint | Description |
 |--------|-----------|-------------|
-| `GET` | `/api/v1/portfolios/` | List your portfolios |
-| `POST` | `/api/v1/portfolios/` | Create a portfolio |
-| `GET` | `/api/v1/portfolios/{id}/` | Retrieve one portfolio (only your own) |
-| `PUT/PATCH` | `/api/v1/portfolios/{id}/` | Update a portfolio |
-| `DELETE` | `/api/v1/portfolios/{id}/` | Delete a portfolio |
+| GET | `/api/v1/portfolios/` | List your portfolios |
+| POST | `/api/v1/portfolios/` | Create a portfolio |
+| GET | `/api/v1/portfolios/{id}/` | Get one portfolio |
+| PUT/PATCH | `/api/v1/portfolios/{id}/` | Update a portfolio |
+| DELETE | `/api/v1/portfolios/{id}/` | Delete a portfolio |
 
----
-
-### Example: Create a portfolio
-
-**Request**
+### Example: Create a Portfolio
 
 ```json
 POST /api/v1/portfolios/
@@ -108,55 +123,36 @@ POST /api/v1/portfolios/
 }
 ```
 
-**Response**
-
-```json
-{
-  "id": 1,
-  "name": "Core",
-  "currency": "GBP",
-  "owner": 5,
-  "created_at": "...",
-  "updated_at": "..."
-}
-```
-
 ---
 
 # 📈 Holdings API
 
-Holdings represent individual assets inside a portfolio (e.g. stocks, ETFs).
+Holdings represent individual assets within a portfolio.
 
-A holding:
+### Rules:
 
-- **must** belong to a portfolio owned by the authenticated user  
-- enforces **case-insensitive uniqueness** on `symbol` per portfolio  
-- automatically uppercases `symbol` before saving  
-- provides a computed `cost_basis` property (`quantity * avg_price`)
+- Must belong to a portfolio you own  
+- Symbol uniqueness is case-insensitive  
+- Symbol is always stored **uppercase**  
+- Includes computed `cost_basis`
 
 ### 🔒 Multi-Tenant Isolation
 
-- You **cannot create a holding** inside another user’s portfolio  
-- Listing holdings returns **only your own holdings**  
-- Attempts to update/delete another user’s holdings return **404**
-
----
+- You cannot create holdings in another user's portfolio  
+- You only see your own holdings  
+- Cross-user access returns **404**  
 
 ## 📌 Endpoints
 
 | Method | Endpoint | Description |
 |--------|-----------|-------------|
-| `GET` | `/api/v1/holdings/` | List your holdings (search/filter/order supported) |
-| `POST` | `/api/v1/holdings/` | Create a holding in one of your portfolios |
-| `GET` | `/api/v1/holdings/{id}/` | Retrieve a holding (your own only) |
-| `PUT/PATCH` | `/api/v1/holdings/{id}/` | Update a holding |
-| `DELETE` | `/api/v1/holdings/{id}/` | Delete a holding |
+| GET | `/api/v1/holdings/` | List your holdings |
+| POST | `/api/v1/holdings/` | Create a holding |
+| GET | `/api/v1/holdings/{id}/` | Retrieve a holding |
+| PUT/PATCH | `/api/v1/holdings/{id}/` | Update |
+| DELETE | `/api/v1/holdings/{id}/` | Delete |
 
----
-
-## 📘 Example: Create a holding
-
-**Request**
+### Example: Create a Holding
 
 ```json
 POST /api/v1/holdings/
@@ -168,46 +164,62 @@ POST /api/v1/holdings/
 }
 ```
 
-**Response**
-
-```json
-{
-  "id": 2,
-  "portfolio": 1,
-  "symbol": "AAPL",
-  "display_name": "",
-  "quantity": "10.00000000",
-  "avg_price": "150.00000000",
-  "cost_basis": "1500.00000000",
-  "created_at": "...",
-  "updated_at": "..."
-}
-```
-
 ---
 
 # 🔍 Searching, Filtering & Ordering
 
-The API supports:
+### Portfolios
 
-### For Portfolios
 ```
 ?search=<name>
 ?ordering=name
 ```
 
-### For Holdings
+### Holdings
+
 ```
-?search=<symbol or display_name>
+?search=<symbol/display_name>
 ?ordering=quantity
-?portfolio=<portfolio_id>
+?portfolio=<id>
 ```
+
+---
+
+# 🔧 Environment Variables
+
+Typical `.env` variables:
+
+### Django
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DJANGO_SETTINGS_MODULE` | Settings path | `portfolio_tracker_api.settings.local` |
+| `SECRET_KEY` | Django secret key | `changeme` |
+| `DEBUG` | Debug mode | `True` |
+
+### Database
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | Full DB URL | `postgres://postgres:postgres@db:5432/portfolio_tracker` |
+| `POSTGRES_DB` | DB name | `portfolio_tracker` |
+| `POSTGRES_USER` | User | `postgres` |
+| `POSTGRES_PASSWORD` | Password | `postgres` |
+| `POSTGRES_HOST` | Host | `db` |
+| `POSTGRES_PORT` | Port | `5432` |
+
+### CORS / Hosts
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `ALLOWED_HOSTS` | Hosts | `localhost,127.0.0.1` |
+| `CSRF_TRUSTED_ORIGINS` | CSRF origins | `http://localhost:8000` |
 
 ---
 
 # 📑 API Documentation
 
-When `DEBUG = True`, Swagger & ReDoc are available:
+With `DEBUG=True`:
 
 ```
 /api/docs/
@@ -219,15 +231,11 @@ When `DEBUG = True`, Swagger & ReDoc are available:
 
 # 🧪 Testing
 
-The project includes:
-
 - pytest + pytest-django  
-- 95%+ overall coverage  
-- Multi-user tenancy fixtures  
-- CRUD + validation + isolation tests  
-- Unified JSON error-handling tests  
-
-Run the test suite:
+- 95%+ coverage  
+- Multi-user tenancy tests  
+- CRUD + validation tests  
+- Unified error-handling tests  
 
 ```bash
 make test
@@ -237,17 +245,12 @@ make test
 
 # 📦 Deployment
 
-The project ships with:
-
-- `docker-compose.local.yml` – local dev
-- `docker-compose.prod.yml` – production image
-- Split Django settings for local/staging/production
-- Ready for deployment to AWS, GCP, Azure or Render
-
-Production build:
+Local + production Docker configs included.
 
 ```bash
 make prod
 ```
+
+Ready for AWS, Render, GCP, Azure, Railway, Fly.io, etc.
 
 ---
