@@ -73,9 +73,18 @@ staging:
 	$(DC) $(COMPOSE_STAGING) up -d --build
 	@echo "Staging stack running at http://localhost:8001"
 
-prod:
+prod-build:
+	$(DC) $(COMPOSE_PROD) build
+
+prod-up:
 	$(DC) $(COMPOSE_PROD) up -d --build
 	@echo "Production-like stack running at http://localhost:8000"
+
+prod-down:
+	$(DC) $(COMPOSE_PROD) down -v
+
+prod-logs:
+	$(DC) $(COMPOSE_PROD) logs -f web
 
 down:
 	$(DC) down
