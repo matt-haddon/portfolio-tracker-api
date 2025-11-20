@@ -19,8 +19,11 @@ SECURE_HSTS_PRELOAD = True
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# JSON-only API
-REST_FRAMEWORK = {"DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",)}
+# JSON-only API, but keep all base DRF settings (auth, pagination, filters, etc.)
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # from base.py
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+}
 
 # Logging
 LOGGING = {
