@@ -11,6 +11,7 @@ services:
       # prefer DATABASE_URL in real prod; .env fallback below for local prod-ish
       DATABASE_URL: ${DATABASE_URL:-}
       SECRET_KEY: ${SECRET_KEY:-change-me-in-prod}
+      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-False}
     # No source-code volume in production-like runs
     ports:
       - "8000:8000"
