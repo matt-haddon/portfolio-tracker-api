@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Build](https://img.shields.io/badge/Status-Active-success)
 
-A fully containerised **Django REST Framework** backend for managing investment portfolios and holdings.
+A production-ready Django REST API for managing investment portfolios and holdings. Fully containerised with Docker, tested with pytest, and structured for a long-term backend → platform → infrastructure engineering roadmap.
 
 ---
 
@@ -37,14 +37,18 @@ open http://localhost:8000/api/docs/
 
 ---
 
-## 🚀 Features
+# 🚀 Features
 
-- Django REST Framework with OpenAPI (Swagger + ReDoc)
-- PostgreSQL database running in Docker
-- Local and production Docker Compose configurations
-- Makefile for one-line setup commands
-- Ready for CI/CD integration and cloud deployment
-- Developer-friendly structure (local, staging, production settings)
+- Django REST Framework (DRF) with clean, fully tested API layer  
+- PostgreSQL 15 database (Dockerised)  
+- Authentication via JWT (SimpleJWT)  
+- Full domain model: Portfolios & Holdings  
+- Complete CRUD with tenancy isolation  
+- Production-ready Dockerfile (non-root, hardened, Gunicorn)  
+- Prod/staging/local settings split  
+- Makefile tooling  
+- CI-ready structure  
+- OpenAPI schema via drf-spectacular  
 
 ---
 
@@ -66,6 +70,34 @@ open http://localhost:8000/api/docs/
 make dev
 # or:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+---
+
+# 🚀 Production Usage (Local Prod Simulation)
+
+Start prod stack:
+
+```bash
+make prod-up
+```
+
+Check health:
+
+```bash
+curl http://localhost:8000/health/
+```
+
+Stop stack:
+
+```bash
+make prod-down
+```
+
+View logs:
+
+```bash
+make prod-logs
 ```
 
 ---
@@ -185,6 +217,21 @@ POST /api/v1/holdings/
 
 ---
 
+# 📚 Makefile Commands (Reference)
+
+| Command | Description |
+|--------|-------------|
+| `make dev` | Start local development stack |
+| `make test` | Run test suite |
+| `make migrate` | Run migrations |
+| `make format` | Run Ruff/Black formatting |
+| `make prod-up` | Start production-like stack (Gunicorn) |
+| `make prod-down` | Stop prod stack |
+| `make prod-logs` | Tail production logs |
+| `make rebuild` | Full rebuild of local containers |
+
+---
+
 # 🔧 Environment Variables
 
 Typical `.env` variables:
@@ -254,3 +301,5 @@ make prod
 Ready for AWS, Render, GCP, Azure, Railway, Fly.io, etc.
 
 ---
+
+
