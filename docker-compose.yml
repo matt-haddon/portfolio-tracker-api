@@ -10,12 +10,31 @@ services:
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost}
       # prefer DATABASE_URL in real prod; .env fallback below for local prod-ish
       DATABASE_URL: ${DATABASE_URL:-}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-prod}
     # No source-code volume in production-like runs
     ports:
       - "8000:8000"
+    
+    # Security hardening
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
     depends_on:
       db:
         condition: service_healthy
+    
+    restart: unless-stopped
 
   db:
     image: postgres:15
