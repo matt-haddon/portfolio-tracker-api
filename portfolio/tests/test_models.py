@@ -31,3 +31,16 @@ def test_cost_basis_property(user):
         avg_price="150",
     )
     assert h.cost_basis == 300
+
+
+def test_cost_value_equals_none_when_amount_missing(user):
+    p = Portfolio.objects.create(owner=user, name="Core", currency="GBP")
+    h = Holding.objects.create(
+        portfolio=p,
+        symbol="AAPL",
+        quantity="2",
+        avg_price="150",
+    )
+
+    h.quantity = None
+    assert h.cost_basis is None

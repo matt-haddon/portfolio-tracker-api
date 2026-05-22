@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from rest_framework import status
 
@@ -223,3 +225,48 @@ def test_delete_other_users_holding_returns_404(auth_client, other_auth_client, 
     # user1 tries to delete user2's holding
     resp = auth_client.delete(f"/api/v1/holdings/{h2_id}/")
     assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_cost_basis_present(auth_client, portfolio_u1):
+    resp = auth_client.post(
+        "/api/v1/holdings/",
+        {
+            "portfolio": portfolio_u1.id,
+            "symbol": "aapl",
+            "display_name": "Apple",
+            "quantity": "10",
+            "avg_price": "150",
+        },
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+
+    # cost basis calculated and present
+    assert resp.json()["cost_basis"] == Decimal("1500")
+
+
+def test_missing_required_fields_returns_400(auth_client, portfolio_u1):
+    resp = auth_client.post(
+        "/api/v1/holdings/",
+        {
+            "portfolio": portfolio_u1.id,
+            "symbol": "aapl",
+            "display_name": "Apple",
+            "avg_price": "150",
+        },
+        format="json",
+    )
+
+    resp2 = auth_client.post(
+        "/api/v1/holdings/",
+        {
+            "portfolio": portfolio_u1.id,
+            "symbol": "aapl",
+            "display_name": "Apple",
+            "quantity": "10",
+        },
+        format="json",
+    )
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp2.status_code == status.HTTP_400_BAD_REQUEST

@@ -1,4 +1,5 @@
 # core/exceptions.py
+import logging
 from typing import Any, Dict, Optional
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -6,6 +7,8 @@ from django.db import IntegrityError
 from rest_framework import exceptions, status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
+
+logger = logging.getLogger(__name__)
 
 
 def _base_payload(
@@ -83,4 +86,5 @@ def exception_handler(exc: Exception, context: Dict[str, Any]) -> Response:
         message="An unexpected error occurred.",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
+    logger.exception("Unhandled exception in exception_handler: %s", exc)
     return Response(payload, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

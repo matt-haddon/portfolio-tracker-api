@@ -135,3 +135,17 @@ def test_delete_other_users_portfolio_returns_404(auth_client, other_auth_client
     # user1 tries to delete user2's portfolio
     resp = auth_client.delete(f"/api/v1/portfolios/{p2_id}/")
     assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_delete_portfolio_returns_204(auth_client):
+    # user creates a portfolio
+    r = auth_client.post(
+        "/api/v1/portfolios/",
+        {"name": "U2", "currency": "USD"},
+        format="json",
+    )
+
+    # user deletes portfolio
+    resp = auth_client.delete(f"/api/v1/portfolios/{r.json()['id']}/")
+    assert resp.status_code == status.HTTP_204_NO_CONTENT
+    assert not Portfolio.objects.filter(name="U2").exists()
