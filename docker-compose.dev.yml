@@ -16,6 +16,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
   db:
     # inherits image/env/volume from base compose if you use a base file
@@ -24,12 +26,58 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data  # persist DB locally
     ports:
-      - "5432:5432"                       # expose for psql/TablePlus/DBeaver
+      - "5432:5432" 
+    restart: unless-stopped                      # expose for psql/TablePlus/DBeaver
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 5s
       timeout: 3s
       retries: 20
+  
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: celery -A portfolio_tracker_api worker --loglevel=info
+    environment:
+      DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.local
+    env_file: .env  
+    volumes:
+      - .:/app
+    restart: unless-stopped                
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: celery -A portfolio_tracker_api beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.local
+    env_file: .env  
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy             
 
 volumes:
   pg_data: {}

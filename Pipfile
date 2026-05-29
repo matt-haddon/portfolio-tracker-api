@@ -17,6 +17,10 @@ django-filter = "*"
 djangorestframework-simplejwt = "*"
 django-cors-headers = "*"
 gunicorn = "*"
+celery = {extras = ["redis"], version = "*"}
+django-celery-beat = "*"
+redis = "*"
+requests = "*"
 
 [dev-packages]
 model-bakery = "*"
@@ -29,6 +33,7 @@ pytest-django = "*"
 pytest-cov = "*"
 django-stubs = "*"
 djangorestframework-stubs = "*"
+pytest-celery = "*"
 
 [requires]
 python_version = "3.13"

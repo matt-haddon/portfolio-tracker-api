@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     "corsheaders",
     # Swagger
     "drf_spectacular",
+    # Third Party Apps
+    "django_celery_beat",
     # Local apps
     "core",
     "users",
@@ -190,6 +192,38 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
     "UPDATE_LAST_LOGIN": True,
 }
+
+# ------------------------------------------------------------
+# REDIS
+# ------------------------------------------------------------
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+
+# ------------------------------------------------------------
+# CELERY
+# ------------------------------------------------------------
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# ------------------------------------------------------------
+# CACHE
+# ------------------------------------------------------------
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "TIMEOUT": 300,  # 5 minutes default
+    }
+}
+
+PRICE_CACHE_TTL = int(os.getenv("PRICE_CACHE_TTL", 900))  # 15 minutes
 
 # ------------------------------------------------------------
 # MISC SETTINGS
