@@ -15,12 +15,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
   db:
     image: postgres:15
     env_file: .env
     volumes:
       - pg_data_staging:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 5s
@@ -29,6 +32,49 @@ services:
     # optional: map a different host port for staging DB
     # ports:
     #   - "5433:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.staging
+    command: celery -A portfolio_tracker_api worker --loglevel=info
+    environment:
+      DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.staging
+    env_file: .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.staging
+    command: celery -A portfolio_tracker_api beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.staging
+    env_file: .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   pg_data_staging:
