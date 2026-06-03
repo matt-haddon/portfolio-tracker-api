@@ -45,13 +45,11 @@ services:
   celery_worker:
     build:
       context: .
-      dockerfile: Dockerfile.staging
+      dockerfile: Dockerfile
     command: celery -A portfolio_tracker_api worker --loglevel=info
     environment:
       DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.staging
     env_file: .env
-    volumes:
-      - .:/app
     restart: unless-stopped
     depends_on:
       db:
@@ -62,13 +60,11 @@ services:
   celery_beat:
     build:
       context: .
-      dockerfile: Dockerfile.staging
+      dockerfile: Dockerfile
     command: celery -A portfolio_tracker_api beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     environment:
       DJANGO_SETTINGS_MODULE: portfolio_tracker_api.settings.staging
     env_file: .env
-    volumes:
-      - .:/app
     restart: unless-stopped
     depends_on:
       db:
