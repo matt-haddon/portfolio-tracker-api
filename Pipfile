@@ -21,6 +21,7 @@ celery = {extras = ["redis"], version = "*"}
 django-celery-beat = "*"
 redis = "*"
 requests = "*"
+yfinance = "*"
 
 [dev-packages]
 model-bakery = "*"
