@@ -2,7 +2,6 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-pytestmark = pytest.mark.django_db
 User = get_user_model()
 
 TOKEN_URL = "/api/v1/auth/token/"
@@ -53,3 +52,19 @@ def other_auth_client(other_user):
     token = res.json()["access"]
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
     return client
+
+
+@pytest.fixture
+def portfolio(user):
+    from portfolio.models import Portfolio
+
+    return Portfolio.objects.create(owner=user, name="Main", currency="GBP")
+
+
+@pytest.fixture
+def holding(portfolio):
+    from portfolio.models import Holding
+
+    return Holding.objects.create(
+        portfolio=portfolio, symbol="AAPL", quantity="10", avg_price="150"
+    )
