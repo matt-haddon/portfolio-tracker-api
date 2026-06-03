@@ -1,8 +1,14 @@
 import logging
+from decimal import Decimal
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import filters, permissions, viewsets
+from rest_framework import filters, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from prices.models import Price
+from prices.services import fetch_and_store_price
 
 from .models import Holding, Portfolio
 from .serializers import HoldingSerializer, PortfolioSerializer
@@ -78,3 +84,43 @@ class HoldingViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         logger.info("holding %s destroyed by user %s", instance.id, self.request.user.id)  # type: ignore[union-attr]
         instance.delete()
+
+    @action(detail=True, methods=["get"], url_path="valuation")
+    def valuation(self, request, pk=None):
+
+        holding = self.get_object()
+        logger.info(
+            "valuation requested for holding %s (%s) by user %s",
+            holding.id,
+            holding.symbol,
+            request.user.id,
+        )
+        try:
+            current_price = fetch_and_store_price(holding.symbol)
+        except RuntimeError:
+            return Response(
+                {"message": "Unable to fetch price for this symbol"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        price_obj = Price.objects.filter(symbol=holding.symbol).first()
+        price_updated_at = price_obj.updated_at if price_obj else None
+
+        try:
+            value = Decimal(str(current_price)) * Decimal(holding.quantity)
+        except Exception:
+            logger.warning(
+                "could not calculate value for holding %s, price: %s", holding.id, current_price
+            )
+            value = None
+
+        return Response(
+            {
+                "symbol": holding.symbol,
+                "price": current_price,
+                "quantity": holding.quantity,
+                "value": value,
+                "currency": price_obj.currency if price_obj else None,
+                "price_updated_at": price_updated_at,
+            }
+        )
