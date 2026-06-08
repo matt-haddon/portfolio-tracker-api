@@ -21,5 +21,6 @@ def test_fetch_prices_dispatches_tasks(mock_delay):
 def test_fetch_price_for_symbol_retries_on_failure(mock_fetch):
     mock_fetch.side_effect = RuntimeError("API failed")
 
-    with pytest.raises(RuntimeError):
-        fetch_price_for_symbol.apply(args=["AAPL"])
+    fetch_price_for_symbol.apply(args=["AAPL"])
+
+    assert mock_fetch.call_count == 4
