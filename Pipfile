@@ -22,6 +22,7 @@ django-celery-beat = "*"
 redis = "*"
 requests = "*"
 yfinance = "*"
+anthropic = "*"
 
 [dev-packages]
 model-bakery = "*"
