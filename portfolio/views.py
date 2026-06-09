@@ -7,6 +7,7 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from insights.views import PortfolioInsightsMixin
 from prices.models import Price
 from prices.services import fetch_and_store_price
 
@@ -23,7 +24,7 @@ class IsAuthenticated(permissions.IsAuthenticated):
 
 
 @extend_schema(tags=["portfolios"])
-class PortfolioViewSet(viewsets.ModelViewSet):
+class PortfolioViewSet(PortfolioInsightsMixin, viewsets.ModelViewSet):
     """
     Auto-wires CRUD for /api/portfolios/ and /api/portfolios/{id}/
     - list / retrieve: only your portfolios
