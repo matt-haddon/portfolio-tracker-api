@@ -227,6 +227,14 @@ CACHES = {
 PRICE_CACHE_TTL = int(os.getenv("PRICE_CACHE_TTL", 900))  # 15 minutes
 
 # ------------------------------------------------------------
+# AI INSIGHTS
+# ------------------------------------------------------------
+
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+INSIGHTS_CACHE_TTL = int(os.getenv("INSIGHT_CACHE_TTL", 3600))
+ANTHROPIC_MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", 1024))
+
+# ------------------------------------------------------------
 # MISC SETTINGS
 # ------------------------------------------------------------
 
